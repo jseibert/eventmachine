@@ -181,7 +181,7 @@ require 'thread'
 # Interesting thought.
 #
 module EventMachine
-  class <<self
+  class << self
     # Exposed to allow joining on the thread, when run in a multithreaded
     # environment. Performing other actions on the thread has undefined
     # semantics.
@@ -993,7 +993,7 @@ module EventMachine
       jobs, @next_tick_queue = @next_tick_queue, []
       jobs
     end
-    jobs.each { |j| j.call }
+    (jobs ||= []).each { |j| j.call }
   end
 
 
