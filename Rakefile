@@ -27,6 +27,9 @@
 # # and run rake gemwin32.
 #
 
+chdir(File.dirname(__FILE__))
+$: << File.dirname(__FILE__) # $: is the search path for 'require', below
+
 require 'rubygems'  unless defined?(Gem)
 require 'rake'      unless defined?(Rake)
 
