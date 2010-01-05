@@ -53,7 +53,7 @@ public class EventableSocketChannel implements EventableChannel {
 	SocketChannel channel;
 
 	long binding;
-	LinkedList<ByteBuffer> outboundQ;
+	List<ByteBuffer> outboundQ;
 
 	boolean bCloseScheduled;
 	boolean bConnectPending;
@@ -75,7 +75,7 @@ public class EventableSocketChannel implements EventableChannel {
 		bAttached = false;
 		bNotifyReadable = false;
 		bNotifyWritable = false;
-		outboundQ = new LinkedList<ByteBuffer>();
+		outboundQ = Collections.synchronizedList(new LinkedList<ByteBuffer>());
 	}
 	
 	public long getBinding() {
@@ -163,13 +163,13 @@ public class EventableSocketChannel implements EventableChannel {
 					ByteBuffer b = ByteBuffer.allocate(32*1024); // TODO, preallocate this buffer.
 					sslEngine.wrap(bb, b);
 					b.flip();
-					outboundQ.addLast(b);
+					outboundQ.add(b);
 				} catch (SSLException e) {
 					throw new RuntimeException ("ssl error");
 				}
 			}
 			else {
-				outboundQ.addLast(bb);
+				outboundQ.add(bb);
 			}
 
 			updateEvents();
@@ -202,7 +202,7 @@ public class EventableSocketChannel implements EventableChannel {
 	 */
 	public boolean writeOutboundData() throws IOException {
 		while (!outboundQ.isEmpty()) {
-			ByteBuffer b = outboundQ.getFirst();
+			ByteBuffer b = outboundQ.get(0);
 			if (b.remaining() > 0)
 				channel.write(b);
 
@@ -210,7 +210,7 @@ public class EventableSocketChannel implements EventableChannel {
 			// pop it off and keep looping. If no, the outbound network
 			// buffers are full, so break out of here.
 			if (b.remaining() == 0)
-				outboundQ.removeFirst();
+				outboundQ.remove(0);
 			else
 				break;
 		}
