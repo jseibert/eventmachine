@@ -19,6 +19,7 @@
  * as published by the Free Software Foundation; either version 2 of the
  * License, or (at your option) any later version; or 2) Ruby's License.
  * 
+
  * See the file COPYING for complete licensing information.
  *
  *---------------------------------------------------------------------------
@@ -203,16 +204,20 @@ public class EventableSocketChannel implements EventableChannel {
 	public boolean writeOutboundData() throws IOException {
 		while (!outboundQ.isEmpty()) {
 			ByteBuffer b = outboundQ.get(0);
-			if (b.remaining() > 0)
-				channel.write(b);
+			if (b != null) {
+				if (b.remaining() > 0)
+					channel.write(b);
 
-			// Did we consume the whole outbound buffer? If yes,
-			// pop it off and keep looping. If no, the outbound network
-			// buffers are full, so break out of here.
-			if (b.remaining() == 0)
-				outboundQ.remove(0);
-			else
+				// Did we consume the whole outbound buffer? If yes,
+				// pop it off and keep looping. If no, the outbound network
+				// buffers are full, so break out of here.
+				if (b.remaining() == 0)
+					outboundQ.remove(0);
+				else
+					break;
+			} else {
 				break;
+			}
 		}
 
 		if (outboundQ.isEmpty() && !bCloseScheduled) {
