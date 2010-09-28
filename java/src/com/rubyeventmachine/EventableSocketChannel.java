@@ -202,9 +202,11 @@ public class EventableSocketChannel implements EventableChannel {
 	 * @return
 	 */
 	public boolean writeOutboundData() throws IOException {
-		while (!outboundQ.isEmpty()) {
-			ByteBuffer b = outboundQ.get(0);
-			if (b != null) {
+		boolean result = false;
+		
+		synchronized(outboundQ) {
+			while (!outboundQ.isEmpty()) {
+				ByteBuffer b = outboundQ.get(0);
 				if (b.remaining() > 0)
 					channel.write(b);
 
@@ -215,19 +217,19 @@ public class EventableSocketChannel implements EventableChannel {
 					outboundQ.remove(0);
 				else
 					break;
-			} else {
-				break;
 			}
-		}
 
-		if (outboundQ.isEmpty() && !bCloseScheduled) {
-			updateEvents();
-		}
+			if (outboundQ.isEmpty() && !bCloseScheduled) {
+				updateEvents();
+			}
 
-		// ALWAYS drain the outbound queue before triggering a connection close.
-		// If anyone wants to close immediately, they're responsible for clearing
-		// the outbound queue.
-		return (bCloseScheduled && outboundQ.isEmpty()) ? false : true;
+			// ALWAYS drain the outbound queue before triggering a connection close.
+			// If anyone wants to close immediately, they're responsible for clearing
+			// the outbound queue.
+			result = (bCloseScheduled && outboundQ.isEmpty()) ? false : true;
+		}
+		
+		return result;
  	}
 	
 	public void setConnectPending() {
